@@ -1,39 +1,26 @@
 package com.example.cryptobag;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
 
 
 public class DetailActivity extends AppCompatActivity {
-    private TextView mDetailMessage;
-    private Button mShowVideoButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
-
         Intent intent = getIntent();
-        String message = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
+        int position = intent.getIntExtra(MainActivity.EXTRA_MESSAGE, 0);
 
-        mDetailMessage =  findViewById(R.id.tvDetailMessage);
-        mDetailMessage.setText(message);
-
-        mShowVideoButton = findViewById(R.id.btnShowVideo);
-        mShowVideoButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v){
-                showVideo("https://www.youtube.com/watch?v=-iIbc-h0ijc");
-            }
-        });
-    }
-    private void showVideo(String url){
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        startActivity(intent);
+        FragmentManager manager = getSupportFragmentManager();
+        FragmentTransaction transaction = manager.beginTransaction();
+        Fragment fragment = new DetailFragment();
+        getSupportFragmentManager().beginTransaction().replace(R.id.detailContainerScroll, fragment).commit();
     }
 }
