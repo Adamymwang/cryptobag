@@ -1,60 +1,78 @@
 package com.example.cryptobag;
 
+import android.os.Bundle;
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import android.content.Intent;
-import android.os.Bundle;
-import android.view.View;
-
+import com.example.cryptobag.Entities.Coin;
+import com.example.cryptobag.Entities.CoinLoreResponse;
+import java.util.ArrayList;
+import java.util.List;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "MainActivity";
-    public static final String EXTRA_MESSAGE = "au.edu.unsw.infs3634.beers.MESSAGE";
-    private RecyclerView mRecyclerView;
-    private RecyclerView.Adapter mAdapter;
-    private RecyclerView.LayoutManager mLayoutManager;
     private boolean mTwoPane;
+    private CoinAdapter mAdapter;
+    private String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        if (findViewById(R.id.detail_container) != null){
+
+        if (findViewById(R.id.detail_container) != null) {
             mTwoPane = true;
         }
-        mRecyclerView = findViewById(R.id.rvList);
-        mRecyclerView.setHasFixedSize(true);
-        mLayoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(mLayoutManager);
-        CoinAdapter.RecyclerViewClickListener listener = new CoinAdapter.RecyclerViewClickListener(){
-            @Override
-            public void onClick(View view, int position){
-                if(mTwoPane){
-                    final FragmentManager fragmentManager = getSupportFragmentManager();
-                    FragmentTransaction transaction = fragmentManager.beginTransaction();
-                    Bundle arguments = new Bundle();
-                    arguments.putInt("position", position);
-                    DetailFragment fragment = new DetailFragment();
-                    fragment.setArguments(arguments);
-                    transaction.replace(R.id.detail_container, fragment);
-                    transaction.commit();
-                } else {
-                    launchDetailActivity(position);
-                }
-            }
 
-        };
-        mAdapter = new CoinAdapter(Coin.getCoins(), listener);
+        RecyclerView mRecyclerView = findViewById(R.id.rvList);
+        mRecyclerView.setHasFixedSize(true);
+        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+
+
+
+
+//        Gson gson = new Gson();
+        //This uses hardcoded json output for the data we took from the API library
+        //CoinLoreResponse response = gson.fromJson(CoinLoreResponse.json, CoinLoreResponse.class);
+        //List<Coin> coins = response.getData();
+        mAdapter = new CoinAdapter(this, new ArrayList<Coin>(), mTwoPane);
         mRecyclerView.setAdapter(mAdapter);
 
-    }
-    private void launchDetailActivity(int position){
-        Intent intent = new Intent(this, DetailActivity.class);
-        intent.putExtra(EXTRA_MESSAGE, position);
-        startActivity(intent);
+//        try{
+            //Create Retrofit instance and parse the retrieved Json using the Gson deserialiser
+            Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.coinLore.net").addConverterFactory(GsonConverterFactory.create()).build();
+
+            //Getting the service and call object for the request
+            CoinService service = retrofit.create(CoinService.class);
+            Call<CoinLoreResponse> coinsCall = service.getCoins();
+
+            //Execute the network request
+//            Response<CoinLoreResponse> coinsResponse = coinsCall.execute();
+            //getData is from the CoinLoreResponse class
+//            List<Coin> coins = coinsResponse.body().getData();
+
+            coinsCall.enqueue(new Callback<CoinLoreResponse>(){
+                @Override
+                public void onResponse(Call<CoinLoreResponse> call, Response<CoinLoreResponse> response){
+                    Log.d(TAG, "OnResponse: SUCCESS");
+                    List<Coin> coins = response.body().getData();
+                    mAdapter.setCoins(coins);
+                }
+                @Override
+                public void onFailure(Call<CoinLoreResponse> call, Throwable t) {
+                    Log.d(TAG, "onFailure: FAILURE");
+                }
+
+            });
+//        } catch (IOException e){
+//            e.printStackTrace();
+//        }
+
     }
 }
